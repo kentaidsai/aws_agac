@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentCore Course Summaries</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6FA; --surface:#FFFFFF; --surface-2:#ECF0F6; --ink:#12203D; --ink-muted:#4E5E7E; --ink-faint:#8391AC;
+    --line:#DEE4EE; --navy:#0F1B33; --navy-2:#182B4D; --navy-ink:#EAF0FC;
+    --accent:#FF9900; --accent-strong:#C96F00; --accent-tint:#FFF1DC;
+    --teal:#0F8B8D; --teal-strong:#0B6C6E; --teal-tint:#E2F4F3;
+    --good:#1F8A55;
+    --shadow: 0 1px 2px rgba(15,27,51,0.05), 0 10px 28px rgba(15,27,51,0.08);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A1220; --surface:#111D33; --surface-2:#16233D; --ink:#E7EDF9; --ink-muted:#A7B4D0; --ink-faint:#7686A6;
+      --line:#263352; --navy:#070D1A; --navy-2:#111D33; --navy-ink:#EAF0FC;
+      --accent:#FFB454; --accent-strong:#FFC97A; --accent-tint:#3A2A0E;
+      --teal:#3FD0C2; --teal-strong:#6BDDD1; --teal-tint:#0E2A2A;
+      --good:#57D98C;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 14px 32px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A1220; --surface:#111D33; --surface-2:#16233D; --ink:#E7EDF9; --ink-muted:#A7B4D0; --ink-faint:#7686A6;
+    --line:#263352; --navy:#070D1A; --navy-2:#111D33; --navy-ink:#EAF0FC;
+    --accent:#FFB454; --accent-strong:#FFC97A; --accent-tint:#3A2A0E;
+    --teal:#3FD0C2; --teal-strong:#6BDDD1; --teal-tint:#0E2A2A;
+    --good:#57D98C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 14px 32px rgba(0,0,0,0.5);
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; line-height:1.5; }
+  a{ color:inherit; }
+  .page{ max-width:1080px; margin:0 auto; }
+  h1,h2,h3{ font-family:"IBM Plex Sans Condensed", Arial, Helvetica, sans-serif; text-wrap:balance; margin:0; }
+  p{ margin:0; }
+  .mono{ font-family:"IBM Plex Mono", Consolas, monospace; }
+
+  .hero{ background: radial-gradient(720px 420px at 85% -10%, rgba(255,153,0,0.16), transparent 60%), linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%); color:var(--navy-ink); padding:56px 40px 48px; border-radius:0 0 28px 28px; }
+  .eyebrow{ font-family:"IBM Plex Mono", Consolas, monospace; font-size:12.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; }
+  .hero h1{ font-size:clamp(28px,4vw,44px); font-weight:700; line-height:1.14; max-width:760px; }
+  .hero .sub{ margin-top:14px; font-size:16.5px; color:#C7D3EC; max-width:680px; }
+  .hero-meta{ margin-top:26px; display:flex; gap:10px; flex-wrap:wrap; }
+  .hero-meta .chip{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#DCE5F7; border-radius:999px; padding:6px 13px; font-size:12px; font-family:"IBM Plex Mono",monospace; }
+
+  main{ padding:44px 40px 0; }
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .card{
+    display:flex; flex-direction:column; gap:12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; box-shadow:var(--shadow); text-decoration:none; color:inherit; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 4px 8px rgba(15,27,51,0.08), 0 18px 36px rgba(15,27,51,0.12); }
+  .card:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .card .idx{
+    font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:0.07em; color:var(--accent-strong);
+    background:var(--accent-tint); display:inline-block; padding:3px 10px; border-radius:999px; width:fit-content;
+  }
+  .card h3{ font-size:17px; line-height:1.3; }
+  .card .zh{ font-size:13px; color:var(--ink-muted); }
+  .card .desc{ font-size:12.5px; color:var(--ink-muted); flex:1; }
+  .card .open{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--teal-strong); margin-top:4px; }
+  .card .open svg{ width:13px; height:13px; }
+
+  .note{ margin:34px 0 0; font-size:12.5px; color:var(--ink-faint); display:flex; align-items:center; gap:8px; }
+
+  footer{ margin-top:48px; padding:28px 40px 40px; border-top:1px solid var(--line); }
+  footer .meta{ font-size:11.5px; color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; line-height:1.8; }
+
+  @media (max-width:900px){ .grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:620px){ .grid{ grid-template-columns:1fr; } .hero{ padding:44px 22px 38px; } main{ padding:34px 22px 0; } footer{ padding:24px 22px 32px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>COURSE SUMMARY CARDS</div>
+    <h1>Building Agentic AI with Amazon Bedrock AgentCore</h1>
+    <p class="sub">全課程八個模組的視覺化摘要卡索引。點選任一卡片,將於新視窗開啟該模組的完整重點摘要。</p>
+    <div class="hero-meta">
+      <span class="chip">8 Modules</span>
+      <span class="chip">M00 &ndash; M07</span>
+      <span class="chip">Light / Dark Mode</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+
+      <a class="card" href="m00-course-intro.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 00</span>
+        <h3>Introduction</h3>
+        <p class="zh">課程介紹</p>
+        <p class="desc">課程目標與議程總覽、課堂規範與虛擬教室功能、先備知識、學員自我介紹,以及課程資源與實驗環境存取方式。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m01-foundations.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 01</span>
+        <h3>Foundations of Agentic AI Patterns</h3>
+        <p class="zh">Agentic AI 基礎與 Amazon Bedrock AgentCore</p>
+        <p class="desc">傳統 AI 與 Agentic AI 的差異、Agent 五大核心元件、Prototype-to-Production 鴻溝,以及 AgentCore 九大服務全覽。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m02-runtime.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 02</span>
+        <h3>AgentCore Runtime and Framework Integration</h3>
+        <p class="zh">Runtime 與框架整合</p>
+        <p class="desc">開源代理人框架比較、Runtime 核心特色與 Session 隔離、容器化 vs. 直接程式碼部署。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m03-security-identity.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 03</span>
+        <h3>Security and Identity Management</h3>
+        <p class="zh">安全與身份管理</p>
+        <p class="desc">入站/出站驗證、三種授權模式(SigV4、2LO、3LO)、AgentCore Identity 關鍵能力與企業安全考量。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m04-tools-gateway.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 04</span>
+        <h3>Tool Integration and AgentCore Gateway</h3>
+        <p class="zh">工具整合與 Gateway</p>
+        <p class="desc">內建工具、Model Context Protocol(MCP)、AgentCore Gateway 架構,以及以 Cedar 政策治理的 AgentCore Policy。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m05-memory.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 05</span>
+        <h3>Agentic Memory Implementation</h3>
+        <p class="zh">代理人記憶實作</p>
+        <p class="desc">短期 / 長期記憶概念、五種記憶萃取策略、記憶生命週期,以及以命名空間實作的細緻存取控制。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m06-deployment-observability.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 06</span>
+        <h3>Production Monitoring and Observability</h3>
+        <p class="zh">正式環境監控與可觀測性</p>
+        <p class="desc">Session/Trace/Span 階層、CloudWatch GenAI Observability 檢視層級,以及 AgentCore Evaluations 三層級評估。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+      <a class="card" href="m07-wrap-up.html" target="_blank" rel="noopener">
+        <span class="idx">MODULE 07</span>
+        <h3>Course Wrap-Up</h3>
+        <p class="zh">課程總結</p>
+        <p class="desc">七大模組回顧、課程目標檢核、AWS Skill Builder 學習資源、AWS 認證等級總覽,以及考照準備四步驟。</p>
+        <span class="open">開啟摘要卡<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+      </a>
+
+    </div>
+
+    <p class="note">&#128161; 每張卡片皆會在新的瀏覽器分頁 / 視窗中開啟對應的摘要卡。</p>
+  </main>
+
+  <footer>
+    <div class="meta">
+      課程:Building Agentic AI with Amazon Bedrock AgentCore (200-MLAGAC-10-EN)<br>
+      來源:MLAGAC-10-EN-M00~M07_InstructorDeck.pptx<br>
+      內容:八份單頁 HTML 視覺化摘要卡,支援亮 / 暗色主題自動切換
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

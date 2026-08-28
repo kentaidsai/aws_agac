@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentCore Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6FA;
+    --surface:#FFFFFF;
+    --surface-2:#ECF0F6;
+    --ink:#12203D;
+    --ink-muted:#4E5E7E;
+    --ink-faint:#8391AC;
+    --line:#DEE4EE;
+    --navy:#0F1B33;
+    --navy-2:#182B4D;
+    --navy-ink:#EAF0FC;
+    --accent:#FF9900;
+    --accent-strong:#C96F00;
+    --accent-tint:#FFF1DC;
+    --teal:#0F8B8D;
+    --teal-strong:#0B6C6E;
+    --teal-tint:#E2F4F3;
+    --good:#1F8A55;
+    --good-tint:#E4F5EC;
+    --shadow: 0 1px 2px rgba(15,27,51,0.05), 0 10px 28px rgba(15,27,51,0.08);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A1220;
+      --surface:#111D33;
+      --surface-2:#16233D;
+      --ink:#E7EDF9;
+      --ink-muted:#A7B4D0;
+      --ink-faint:#7686A6;
+      --line:#263352;
+      --navy:#070D1A;
+      --navy-2:#111D33;
+      --navy-ink:#EAF0FC;
+      --accent:#FFB454;
+      --accent-strong:#FFC97A;
+      --accent-tint:#3A2A0E;
+      --teal:#3FD0C2;
+      --teal-strong:#6BDDD1;
+      --teal-tint:#0E2A2A;
+      --good:#57D98C;
+      --good-tint:#103322;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 14px 32px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A1220;
+    --surface:#111D33;
+    --surface-2:#16233D;
+    --ink:#E7EDF9;
+    --ink-muted:#A7B4D0;
+    --ink-faint:#7686A6;
+    --line:#263352;
+    --navy:#070D1A;
+    --navy-2:#111D33;
+    --navy-ink:#EAF0FC;
+    --accent:#FFB454;
+    --accent-strong:#FFC97A;
+    --accent-tint:#3A2A0E;
+    --teal:#3FD0C2;
+    --teal-strong:#6BDDD1;
+    --teal-tint:#0E2A2A;
+    --good:#57D98C;
+    --good-tint:#103322;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 14px 32px rgba(0,0,0,0.5);
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .page{ max-width:1080px; margin:0 auto; }
+  h1,h2,h3{ font-family:"IBM Plex Sans Condensed", Arial, Helvetica, sans-serif; text-wrap:balance; margin:0; }
+  p{ margin:0; }
+  .mono{ font-family:"IBM Plex Mono", Consolas, monospace; }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:
+      radial-gradient(720px 420px at 85% -10%, rgba(255,153,0,0.16), transparent 60%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    color:var(--navy-ink);
+    padding:52px 40px 44px;
+    border-radius:0 0 28px 28px;
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono", Consolas, monospace;
+    font-size:12.5px;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:var(--accent);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; }
+  .hero h1{ font-size:clamp(28px,4vw,42px); font-weight:700; line-height:1.12; max-width:720px; }
+  .hero .sub{ margin-top:12px; font-size:16.5px; color:#C7D3EC; max-width:640px; }
+  .hero-grid{ display:flex; gap:36px; align-items:flex-end; flex-wrap:wrap; margin-top:30px; }
+  .obj-list{ list-style:none; margin:0; padding:0; display:grid; gap:10px; flex:1 1 380px; min-width:280px; }
+  .obj-list li{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; color:#DCE5F7; }
+  .obj-list .num{
+    flex:none; width:22px; height:22px; border-radius:50%;
+    background:rgba(255,153,0,0.18); border:1px solid rgba(255,153,0,0.5);
+    color:var(--accent); font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+
+  /* mini agentic-loop diagram in hero */
+  .loop-card{
+    flex:none; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.14);
+    border-radius:14px; padding:18px 20px; min-width:260px;
+  }
+  .loop-card .cap{ font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:#9FB0D6; margin-bottom:12px; font-family:"IBM Plex Mono",monospace; }
+  .loop-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .loop-node{
+    display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11.5px; color:#DCE5F7; width:64px; text-align:center;
+  }
+  .loop-node .ic{
+    width:40px; height:40px; border-radius:50%; background:var(--navy-2); border:1.5px solid var(--accent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .loop-arrow{ color:var(--accent); font-size:18px; margin-top:-18px; }
+
+  /* ---------- Sections ---------- */
+  main{ padding:8px 40px 0; }
+  .section{ padding:46px 0; border-bottom:1px solid var(--line); }
+  .section:last-of-type{ border-bottom:none; }
+  .section-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:26px; flex-wrap:wrap; }
+  .section-tag{
+    font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:0.08em; color:var(--ink-faint);
+    text-transform:uppercase;
+  }
+  .section h2{ font-size:24px; font-weight:700; color:var(--ink); }
+  .section-note{ color:var(--ink-muted); font-size:14.5px; max-width:640px; margin-top:6px; }
+
+  /* ---------- Compare (traditional vs agentic) ---------- */
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .compare-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 22px 20px; box-shadow:var(--shadow);
+  }
+  .compare-card h3{ font-size:16px; color:var(--ink); margin-bottom:14px; }
+  .flow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; }
+  .chip{
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-muted);
+    border-radius:999px; padding:6px 12px; font-size:12.5px; white-space:nowrap;
+  }
+  .arrow{ color:var(--ink-faint); font-size:14px; }
+  .agentic .chip.hi{ background:var(--accent-tint); border-color:var(--accent); color:var(--accent-strong); font-weight:600; }
+  .loop-badge{
+    display:inline-flex; align-items:center; gap:6px; margin-top:14px; font-size:12px; color:var(--accent-strong);
+    font-family:"IBM Plex Mono",monospace; background:var(--accent-tint); border-radius:8px; padding:5px 10px;
+  }
+  .trait-list{ list-style:none; margin:16px 0 0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .trait-list li{ font-size:13px; color:var(--ink-muted); display:flex; gap:8px; align-items:flex-start; grid-column: span 2; }
+  .trait-list .tick{ color:var(--good); flex:none; font-weight:700; }
+
+  /* ---------- Components + Security/Observability wrap ---------- */
+  .wrap-frame{
+    border:1.5px dashed var(--line); border-radius:20px; padding:22px 22px 26px; position:relative;
+    background:linear-gradient(180deg, var(--surface-2), transparent 40%);
+  }
+  .wrap-badges{ display:flex; justify-content:space-between; gap:14px; margin-bottom:20px; flex-wrap:wrap; }
+  .badge-card{ flex:1 1 260px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); }
+  .badge-card .lbl{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; color:var(--ink); margin-bottom:5px; }
+  .badge-card .lbl .ic{ width:22px; height:22px; }
+  .badge-card p{ font-size:12.5px; color:var(--ink-muted); }
+  .comp-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  .comp-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 14px;
+    box-shadow:var(--shadow); text-align:left; display:flex; flex-direction:column; gap:10px;
+  }
+  .comp-card .icwrap{
+    width:38px; height:38px; border-radius:10px; background:var(--accent-tint); display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .comp-card .icwrap svg{ width:20px; height:20px; }
+  .comp-card h4{ font-size:13.5px; font-weight:700; color:var(--ink); margin:0; }
+  .comp-card p{ font-size:12px; color:var(--ink-muted); margin:0; }
+
+  /* ---------- Chasm ---------- */
+  .chasm-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:28px 26px; box-shadow:var(--shadow); }
+  .chasm-row{ display:flex; align-items:center; gap:10px; }
+  .chasm-pill{
+    flex:none; padding:12px 22px; border-radius:12px; font-weight:700; font-size:14.5px; text-align:center;
+  }
+  .chasm-pill.proto{ background:var(--surface-2); color:var(--ink-muted); border:1px solid var(--line); }
+  .chasm-pill.prod{ background:var(--navy); color:var(--navy-ink); }
+  .chasm-bridge{ flex:1; position:relative; height:64px; }
+  .chasm-bridge svg{ width:100%; height:100%; display:block; }
+  .chasm-label{
+    position:absolute; top:2px; left:50%; transform:translateX(-50%);
+    font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--accent-strong);
+    background:var(--accent-tint); padding:3px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .chasm-tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:20px; }
+  .chasm-tags .chip{ background:var(--surface-2); }
+
+  /* ---------- Services grid ---------- */
+  .legend{ display:flex; gap:22px; margin-bottom:18px; flex-wrap:wrap; }
+  .legend-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-muted); }
+  .legend-dot{ width:10px; height:10px; border-radius:3px; }
+  .legend-dot.a{ background:var(--accent); }
+  .legend-dot.b{ background:var(--teal); }
+  .svc-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .svc-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px;
+    box-shadow:var(--shadow); display:flex; gap:12px;
+  }
+  .svc-card .icwrap{
+    width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .svc-card .icwrap.a{ background:var(--accent-tint); }
+  .svc-card .icwrap.b{ background:var(--teal-tint); }
+  .svc-card .icwrap svg{ width:21px; height:21px; }
+  .svc-card .icwrap.a svg{ stroke:var(--accent-strong); }
+  .svc-card .icwrap.b svg{ stroke:var(--teal-strong); }
+  .svc-card h4{ font-size:14px; font-weight:700; color:var(--ink); margin:0 0 4px; }
+  .svc-card p{ font-size:12px; color:var(--ink-muted); margin:0; }
+
+  /* ---------- Example agent ---------- */
+  .example-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .example-top{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .example-top .who{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-muted); }
+  .example-top .name{ font-weight:700; color:var(--ink); font-size:15px; }
+  .tool-row{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 16px; }
+  .tool-chip{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; background:var(--surface-2); border:1px solid var(--line);
+    color:var(--teal-strong); padding:6px 10px; border-radius:8px;
+  }
+  .support-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .support-row .chip{ background:var(--accent-tint); border-color:var(--accent); color:var(--accent-strong); }
+
+  /* ---------- Footer / knowledge check ---------- */
+  .footer{
+    background:linear-gradient(180deg, var(--navy-2) 0%, var(--navy) 100%);
+    color:var(--navy-ink); border-radius:28px 28px 0 0; padding:44px 40px 34px; margin-top:8px;
+  }
+  .kc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:28px; }
+  .kc-card{ background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.14); border-radius:14px; padding:16px 18px; }
+  .kc-card .q{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--accent); letter-spacing:0.06em; margin-bottom:6px; }
+  .kc-card p.stem{ font-size:13px; color:#C9D4EC; margin-bottom:10px; }
+  .kc-answer{ display:flex; gap:8px; align-items:flex-start; font-size:13px; color:var(--navy-ink); }
+  .kc-answer .ok{ color:var(--good); flex:none; font-weight:700; }
+  .summary-row{ display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; padding-top:22px; border-top:1px solid rgba(255,255,255,0.14); }
+  .summary-list{ list-style:none; margin:0; padding:0; display:grid; gap:8px; flex:1 1 420px; }
+  .summary-list li{ font-size:13px; color:#DCE5F7; display:flex; gap:8px; }
+  .summary-list .tick{ color:var(--good); font-weight:700; flex:none; }
+  .meta{ font-size:11.5px; color:#8FA0C6; font-family:"IBM Plex Mono",monospace; line-height:1.7; flex:none; }
+
+  @media (max-width:820px){
+    .hero{ padding:40px 22px 34px; }
+    main{ padding:8px 22px 0; }
+    .compare-grid{ grid-template-columns:1fr; }
+    .comp-grid{ grid-template-columns:repeat(2,1fr); }
+    .svc-grid{ grid-template-columns:repeat(2,1fr); }
+    .kc-grid{ grid-template-columns:1fr; }
+    .footer{ padding:36px 22px 26px; }
+    .summary-row{ flex-direction:column; }
+    .chasm-row{ flex-wrap:wrap; }
+    .chasm-bridge{ flex-basis:100%; order:3; }
+  }
+  @media (max-width:520px){
+    .comp-grid{ grid-template-columns:1fr; }
+    .svc-grid{ grid-template-columns:1fr; }
+    .trait-list{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>MODULE 01 &middot; BUILDING AGENTIC AI WITH AMAZON BEDROCK AGENTCORE</div>
+    <h1>Foundations of Agentic AI Patterns</h1>
+    <p class="sub">第一章重點摘要:從代理人的基礎組成,到 Amazon Bedrock AgentCore 的九大服務全覽。</p>
+
+    <div class="hero-grid">
+      <ul class="obj-list">
+        <li><span class="num">1</span>定義 Agentic AI 的特徵,並與傳統 AI 系統做出區別</li>
+        <li><span class="num">2</span>辨識代理人的核心元件,以及元件之間的互動關係</li>
+        <li><span class="num">3</span>說明 Bedrock AgentCore 服務如何對應支援 Agentic AI</li>
+      </ul>
+
+      <div class="loop-card">
+        <div class="cap">Agentic Loop</div>
+        <div class="loop-row">
+          <div class="loop-node">
+            <div class="ic">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 21c1.2-3.6 4-5.5 8-5.5s6.8 1.9 8 5.5"/></svg>
+            </div>
+            User
+          </div>
+          <div class="loop-arrow">&#8594;</div>
+          <div class="loop-node">
+            <div class="ic">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h.01M15 9h.01M8 15c1 1.2 2.4 1.8 4 1.8s3-.6 4-1.8"/></svg>
+            </div>
+            Agent
+          </div>
+          <div class="loop-arrow">&#8594;</div>
+          <div class="loop-node">
+            <div class="ic">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 3.3l6 6-3 3-2-2-4 4 2 2-3 3-6-6 3-3 2 2 4-4-2-2z"/></svg>
+            </div>
+            Tools / LLM
+          </div>
+        </div>
+        <div class="loop-badge">&#8635; 持續循環,直到得出回應與推理</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Traditional vs Agentic -->
+    <section class="section">
+      <div class="section-head">
+        <span class="section-tag">01 &middot; Agent Building Blocks</span>
+        <h2>傳統 AI 與 Agentic AI 的差異</h2>
+      </div>
+      <p class="section-note">Agentic AI 從被動輸出轉為主動循環:能自主決策、朝目標邁進、理解情境變化,並透過經驗調整策略。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>生成式 AI 應用(線性流程)</h3>
+          <div class="flow">
+            <span class="chip">User</span><span class="arrow">&#8594;</span>
+            <span class="chip">Invoke model</span><span class="arrow">&#8594;</span>
+            <span class="chip">Application</span><span class="arrow">&#8594;</span>
+            <span class="chip">Response</span>
+          </div>
+          <p style="margin-top:14px;font-size:12.5px;color:var(--ink-muted);">單次呼叫模型、產生回應,不具備持續規劃與工具調用的循環。</p>
+        </div>
+
+        <div class="compare-card agentic">
+          <h3>Agentic AI 應用(循環流程)</h3>
+          <div class="flow">
+            <span class="chip">User</span><span class="arrow">&#8594;</span>
+            <span class="chip">Invoke agent</span><span class="arrow">&#8594;</span>
+            <span class="chip hi">Application &#8646; LLM &#8646; Tools</span>
+          </div>
+          <div class="loop-badge" style="margin-top:12px;">&#8635; Agentic Loop &mdash; 循環至產生推理與工具選擇</div>
+          <ul class="trait-list">
+            <li><span class="tick">&#10003;</span>自主決策(Making independent decisions)</li>
+            <li><span class="tick">&#10003;</span>朝目標邁進(Working toward objectives)</li>
+            <li><span class="tick">&#10003;</span>情境感知(Understanding changing conditions)</li>
+            <li><span class="tick">&#10003;</span>經驗學習(Adapting through experience)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Five components -->
+    <section class="section">
+      <div class="section-head">
+        <span class="section-tag">01 &middot; Agent Building Blocks</span>
+        <h2>Agent 的五大核心元件</h2>
+      </div>
+      <p class="section-note">五個元件彼此依賴、互相增強,而 Security 與 Observability 貫穿所有元件,而非獨立一塊。</p>
+
+      <div class="wrap-frame">
+        <div class="wrap-badges">
+          <div class="badge-card">
+            <div class="lbl"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3.5v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9v-5L12 3z"/></svg>Security</div>
+            <p>保護記憶中的敏感資料、以驗證授權管控工具存取、防止提示注入攻擊,並確保代理人間的安全通訊。</p>
+          </div>
+          <div class="badge-card">
+            <div class="lbl"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#0F8B8D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>Observability</div>
+            <p>記錄決策過程、追蹤工具使用、監控跨元件效能,並具備稽核多代理人互動的能力。</p>
+          </div>
+        </div>
+
+        <div class="comp-grid">
+          <div class="comp-card">
+            <div class="icwrap"><svg viewBox="0 0 24 24" fill="none" stroke="#C96F00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+            <h4>Framework / Agent Code</h4>
+            <p>協調代理人行為,管理元件互動與工作流程執行的協調層。</p>
+          </div>
+          <div class="comp-card">
+            <div class="icwrap"><svg viewBox="0 0 24 24" fill="none" stroke="#C96F00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.3"/><path d="M12 3v2.4M12 18.6V21M4.2 12H6.6M17.4 12h2.4M6 6l1.7 1.7M16.3 16.3L18 18M18 6l-1.7 1.7M7.7 16.3L6 18"/></svg></div>
+            <h4>LLM</h4>
+            <p>負責推理、決策並生成回應的核心引擎。</p>
+          </div>
+          <div class="comp-card">
+            <div class="icwrap"><svg viewBox="0 0 24 24" fill="none" stroke="#C96F00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6"/><path d="M5 12v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6v-6"/></svg></div>
+            <h4>Memory</h4>
+            <p>短期維持對話情境,長期保存知識與使用者偏好。</p>
+          </div>
+          <div class="comp-card">
+            <div class="icwrap"><svg viewBox="0 0 24 24" fill="none" stroke="#C96F00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a3.2 3.2 0 10-4.5 4.5L4 17v3h3l6.2-6.2a3.2 3.2 0 004.5-4.5l-2.3 2.3-2.2-.5-.5-2.2 2-2z"/></svg></div>
+            <h4>Tools</h4>
+            <p>串接外部系統、API 與服務,執行真實世界的動作。</p>
+          </div>
+          <div class="comp-card">
+            <div class="icwrap"><svg viewBox="0 0 24 24" fill="none" stroke="#C96F00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.6"/><circle cx="17" cy="9.5" r="2.2"/><path d="M4 19c.5-3 2-4.6 4.3-4.6S12 16 12.4 19"/><path d="M13.5 19c.4-2.3 1.6-3.6 3.5-3.6s3 1.3 3.4 3.6"/></svg></div>
+            <h4>Other Agents</h4>
+            <p>支援多代理人協作、資訊共享與複雜工作流程協調。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Prototype to production chasm -->
+    <section class="section">
+      <div class="section-head">
+        <span class="section-tag">02 &middot; Amazon Bedrock AgentCore</span>
+        <h2>從原型到正式環境的鴻溝</h2>
+      </div>
+      <p class="section-note">做出一個 Demo 級代理人相對容易,但要跨越到企業級正式環境會遇到多重挑戰 &mdash; AgentCore 正是為了填補這道落差而生。</p>
+
+      <div class="chasm-wrap">
+        <div class="chasm-row">
+          <div class="chasm-pill proto">Prototype<br><span style="font-weight:400;font-size:11.5px;">原型 / Demo</span></div>
+          <div class="chasm-bridge">
+            <svg viewBox="0 0 400 64" preserveAspectRatio="none">
+              <path d="M6 50 Q200 6 394 50" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="2 7" stroke-linecap="round"/>
+              <path d="M6 50 Q200 6 394 50" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 500"/>
+            </svg>
+            <span class="chasm-label">Amazon Bedrock AgentCore</span>
+          </div>
+          <div class="chasm-pill prod">Production<br><span style="font-weight:400;font-size:11.5px;opacity:0.75;">正式環境</span></div>
+        </div>
+        <div class="chasm-tags">
+          <span class="chip">Performance 效能</span>
+          <span class="chip">Scalability 可擴展性</span>
+          <span class="chip">Security 安全性</span>
+          <span class="chip">Context 上下文管理</span>
+          <span class="chip">Governance 治理</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- AgentCore services grid -->
+    <section class="section">
+      <div class="section-head">
+        <span class="section-tag">02 &middot; Amazon Bedrock AgentCore</span>
+        <h2>AgentCore 服務全覽</h2>
+      </div>
+      <p class="section-note">九項服務可獨立使用,亦可組合搭配,並相容任何模型(Any model)、任何框架(Any framework)、任何代理人(Any agent)。</p>
+
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot a"></span>執行與整合(建置、部署、控管)</div>
+        <div class="legend-item"><span class="legend-dot b"></span>記憶與洞察(情境、監控、評估)</div>
+      </div>
+
+      <div class="svc-grid">
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="16" height="6.5" rx="1.6"/><path d="M7.5 7.2h.01M7.5 16.7h.01"/></svg></div>
+          <div><h4>Runtime</h4><p>專為代理人設計的無伺服器執行環境,支援容器與直接程式碼部署。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3.5v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9v-5L12 3z"/><path d="M9.3 12l1.8 1.8 3.4-3.6"/></svg></div>
+          <div><h4>Identity</h4><p>雙向驗證代理人與使用者身份,管理存取權限與稽核軌跡。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6.5" r="2"/><circle cx="18" cy="17.5" r="2"/><path d="M8.2 11.1l7.8-4.1M8.2 12.9l7.8 4.1"/></svg></div>
+          <div><h4>Gateway</h4><p>自動化工具發現與註冊,將 API、Lambda 轉為代理人可用工具,支援 MCP。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 8.5h17"/><circle cx="6" cy="6.5" r="0.6" fill="currentColor" stroke="none"/></svg></div>
+          <div><h4>Browser</h4><p>全託管無伺服器瀏覽器,於隔離環境中執行網頁互動與內容擷取。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 8l-4 4 4 4M15.5 8l4 4-4 4M13.2 6.5l-2.4 11"/></svg></div>
+          <div><h4>Code Interpreter</h4><p>於隔離沙箱中安全執行程式碼,支援資料分析與檔案處理。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap a"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 3c-3 3-7 3.4-7 3.4s.2 8-7-6.9M12 3c3 3 7 3.4 7 3.4s-.2 8 0 8" opacity="0"/><path d="M12 4.2c-2.6 2.4-5.6 2.7-5.6 2.7s-.5 6.6 5.6 9.9c6.1-3.3 5.6-9.9 5.6-9.9s-3-.3-5.6-2.7z"/><path d="M9.3 12l1.9 1.9 3.5-3.7"/></svg></div>
+          <div><h4>Policy</h4><p>以 Cedar 政策語言即時攔截並授權每一次工具呼叫,預設拒絕。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap b"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6"/><path d="M5 12v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6v-6"/></svg></div>
+          <div><h4>Memory</h4><p>短期維持對話上下文,長期保存使用者偏好與知識。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap b"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+          <div><h4>Observability</h4><p>端對端追蹤、除錯與效能監控,相容 OpenTelemetry。</p></div>
+        </div>
+        <div class="svc-card">
+          <div class="icwrap b"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg></div>
+          <div><h4>Evaluations</h4><p>以 LLM-as-a-Judge 進行線上與隨選品質評估。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Example agent -->
+    <section class="section">
+      <div class="section-head">
+        <span class="section-tag">02 &middot; Amazon Bedrock AgentCore</span>
+        <h2>範例:客服代理人</h2>
+      </div>
+      <p class="section-note">貫穿本課程的實作範例,示範多項 AgentCore 服務如何協同運作。</p>
+
+      <div class="example-wrap">
+        <div class="example-top">
+          <span class="who"><span class="name">Strands Agent</span>&nbsp;部署於 AgentCore Runtime</span>
+        </div>
+        <div class="tool-row">
+          <span class="tool-chip">get_product_info()</span>
+          <span class="tool-chip">get_return_policy()</span>
+          <span class="tool-chip">get_technical_support()</span>
+          <span class="tool-chip">web_browser via MCP Gateway</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:12px;">透過 AgentCore Memory 存取顧客偏好與過往互動的短期 / 長期記憶。</p>
+        <div class="support-row">
+          <span class="chip">+ Identity</span>
+          <span class="chip">Policy</span>
+          <span class="chip">Observability</span>
+          <span class="chip">Evaluations</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="section-head" style="margin-bottom:20px;">
+      <span class="section-tag" style="color:#8FA0C6;">Knowledge Check</span>
+      <h2 style="color:var(--navy-ink);">重點驗證</h2>
+    </div>
+
+    <div class="kc-grid">
+      <div class="kc-card">
+        <div class="q">Q1</div>
+        <p class="stem">哪個特徵能判斷某解決方案需要 Agentic AI?</p>
+        <div class="kc-answer"><span class="ok">&#10003;</span>具備循環式決策與持續調整能力(Cyclical decision-making with continuous adaptation)。</div>
+      </div>
+      <div class="kc-card">
+        <div class="q">Q2</div>
+        <p class="stem">代理人架構的五大核心元件為何?</p>
+        <div class="kc-answer"><span class="ok">&#10003;</span>Framework/Agent Code、LLM、Memory、Tools、Inter-agent communication。</div>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <ul class="summary-list">
+        <li><span class="tick">&#10003;</span>定義 Agentic AI 特徵,並與傳統 AI 系統做出區別</li>
+        <li><span class="tick">&#10003;</span>辨識代理人的核心元件,以及元件之間的互動關係</li>
+        <li><span class="tick">&#10003;</span>說明 Bedrock AgentCore 服務如何對應支援 Agentic AI</li>
+      </ul>
+      <div class="meta">
+        課程:Building Agentic AI with Amazon Bedrock AgentCore<br>
+        模組:M01 &middot; Foundations of Agentic AI Patterns<br>
+        來源:MLAGAC-10-EN-M01-Foundations_InstructorDeck.pptx
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
