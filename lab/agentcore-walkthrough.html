@@ -1,0 +1,967 @@
+<title>從原型到生產</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ================= Tokens ================= */
+  :root{
+    --ink:#14192B;
+    --ink-soft:#4B5468;
+    --ink-faint:#7B8395;
+    --paper:#F5F6FA;
+    --surface:#FFFFFF;
+    --surface-2:#ECEEF4;
+    --line:#DCE0EA;
+    --accent:#9A5B14;
+    --accent-strong:#7A4A12;
+    --accent-wash:#F3E4CE;
+    --cat-1:#3D5A99;   /* Task 1.1 · foundation */
+    --cat-1-wash:#E4EAF6;
+    --cat-2:#7A4F82;   /* Task 1.2 · memory */
+    --cat-2-wash:#F0E5F1;
+    --cat-3:#2F6E63;   /* Task 1.3 · gateway/identity */
+    --cat-3-wash:#E1EEEC;
+    --code-bg:#161B2C;
+    --code-ink:#DDE3F5;
+    --code-accent:#E3A855;
+    --shadow: 0 1px 2px rgba(20,25,43,0.06), 0 8px 24px -12px rgba(20,25,43,0.18);
+    --font-display: 'IBM Plex Serif', Georgia, 'Noto Serif TC', serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#EDEFF6;
+      --ink-soft:#AEB6C9;
+      --ink-faint:#7E869B;
+      --paper:#0F1220;
+      --surface:#171B2C;
+      --surface-2:#1E2338;
+      --line:#2B3049;
+      --accent:#E3A855;
+      --accent-strong:#F0C588;
+      --accent-wash:#3A2E17;
+      --cat-1:#8CA6E3;
+      --cat-1-wash:#1E2740;
+      --cat-2:#CDA0D2;
+      --cat-2-wash:#2A2032;
+      --cat-3:#7FCBBD;
+      --cat-3-wash:#182B29;
+      --code-bg:#0B0E19;
+      --code-ink:#DCE3F5;
+      --code-accent:#F0C588;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 30px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#EDEFF6; --ink-soft:#AEB6C9; --ink-faint:#7E869B;
+    --paper:#0F1220; --surface:#171B2C; --surface-2:#1E2338; --line:#2B3049;
+    --accent:#E3A855; --accent-strong:#F0C588; --accent-wash:#3A2E17;
+    --cat-1:#8CA6E3; --cat-1-wash:#1E2740;
+    --cat-2:#CDA0D2; --cat-2-wash:#2A2032;
+    --cat-3:#7FCBBD; --cat-3-wash:#182B29;
+    --code-bg:#0B0E19; --code-ink:#DCE3F5; --code-accent:#F0C588;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 30px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); line-height:1.65; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; color:var(--ink); margin:0;}
+  a{color:var(--accent);}
+  code{font-family:var(--font-mono); font-size:0.88em;}
+  ::selection{ background:var(--accent-wash); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.11em; text-transform:uppercase;
+    color:var(--ink-faint); font-weight:600;
+  }
+
+  /* ================= Header ================= */
+  header.top{
+    background:var(--surface); border-bottom:1px solid var(--line);
+    padding: 2rem 1.5rem 1.75rem;
+  }
+  .top-inner{ max-width:1180px; margin:0 auto; }
+  .top-inner .eyebrow{ margin-bottom:0.6rem; }
+  header.top h1{ font-size:clamp(1.7rem, 1.2rem + 2vw, 2.5rem); font-weight:700; }
+  header.top p.lede{
+    margin:0.6rem 0 0; max-width:62ch; color:var(--ink-soft); font-size:1.02rem;
+  }
+  .tagrow{ margin-top:1.1rem; display:flex; flex-wrap:wrap; gap:0.5rem; }
+  .tag{
+    font-family:var(--font-mono); font-size:0.74rem; padding:0.28rem 0.62rem; border-radius:999px;
+    background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line);
+  }
+
+  /* ================= Layout ================= */
+  .layout{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:220px minmax(0,1fr); gap:2.5rem; padding:0 1.5rem 4rem; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; gap:0; padding:0; } }
+
+  nav.toc{ position:sticky; top:1.25rem; align-self:start; padding-top:2rem; }
+  nav.toc ol{ list-style:none; margin:0; padding:0; border-left:1px solid var(--line); }
+  nav.toc li{ margin:0; }
+  nav.toc a{
+    display:block; padding:0.4rem 0 0.4rem 0.9rem; margin-left:-1px; border-left:2px solid transparent;
+    color:var(--ink-soft); text-decoration:none; font-size:0.88rem;
+  }
+  nav.toc a:hover{ color:var(--ink); }
+  nav.toc a.active{ color:var(--ink); border-left-color:var(--accent); font-weight:600; }
+  nav.toc .toc-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:0.45rem; vertical-align:middle; }
+
+  @media (max-width:900px){
+    nav.toc{
+      position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line);
+      padding:0.6rem 1rem; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch;
+    }
+    nav.toc ol{ display:inline-flex; gap:0.3rem; border-left:none; }
+    nav.toc a{ padding:0.4rem 0.7rem; border-left:none; border-radius:999px; border:1px solid var(--line); }
+    nav.toc a.active{ background:var(--accent-wash); border-color:var(--accent); }
+  }
+
+  main{ min-width:0; padding-top:2.5rem; }
+  section{ scroll-margin-top:5.5rem; margin-bottom:3.4rem; }
+  section > h2{ font-size:1.5rem; }
+  .section-head{ display:flex; align-items:baseline; gap:0.7rem; flex-wrap:wrap; margin-bottom:0.4rem; }
+  .cat-chip{
+    display:inline-flex; align-items:center; gap:0.4rem; font-family:var(--font-mono); font-size:0.72rem;
+    letter-spacing:0.06em; padding:0.22rem 0.6rem; border-radius:999px; font-weight:600;
+  }
+  .cat-chip .dot{ width:7px; height:7px; border-radius:50%; }
+  .cat-1-chip{ background:var(--cat-1-wash); color:var(--cat-1); }
+  .cat-1-chip .dot{ background:var(--cat-1); }
+  .cat-2-chip{ background:var(--cat-2-wash); color:var(--cat-2); }
+  .cat-2-chip .dot{ background:var(--cat-2); }
+  .cat-3-chip{ background:var(--cat-3-wash); color:var(--cat-3); }
+  .cat-3-chip .dot{ background:var(--cat-3); }
+
+  section > p.intro{ color:var(--ink-soft); max-width:68ch; margin:0.6rem 0 1.4rem; }
+
+  /* ---- overview stage row ---- */
+  .stage-row{ display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:0.6rem; align-items:stretch; margin:1.6rem 0; }
+  .stage-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.15rem;
+    box-shadow:var(--shadow); position:relative;
+  }
+  .stage-arrow{ display:flex; align-items:center; justify-content:center; color:var(--ink-faint); font-size:1.3rem; }
+  .stage-card .stage-eyebrow{ font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.08em; }
+  .stage-card h3{ font-size:1.05rem; margin:0.3rem 0 0.35rem; }
+  .stage-card p{ margin:0; font-size:0.86rem; color:var(--ink-soft); }
+  .stage-1 .stage-eyebrow{ color:var(--cat-1); } .stage-1 h3{ color:var(--cat-1); }
+  .stage-2 .stage-eyebrow{ color:var(--cat-2); } .stage-2 h3{ color:var(--cat-2); }
+  .stage-3 .stage-eyebrow{ color:var(--cat-3); } .stage-3 h3{ color:var(--cat-3); }
+  @media (max-width:640px){
+    .stage-row{ grid-template-columns:1fr; }
+    .stage-arrow{ transform:rotate(90deg); padding:0.15rem 0; }
+  }
+
+  .callout{
+    background:var(--surface-2); border-radius:10px; padding:0.95rem 1.1rem; font-size:0.9rem; color:var(--ink-soft);
+    margin-top:1.2rem;
+  }
+  .callout strong{ color:var(--ink); }
+
+  /* ---- section utility bar ---- */
+  .section-tools{ display:flex; justify-content:flex-end; margin-bottom:0.6rem; }
+  .toggle-all{
+    font-family:var(--font-mono); font-size:0.76rem; color:var(--ink-soft); background:none; border:1px solid var(--line);
+    border-radius:999px; padding:0.32rem 0.8rem; cursor:pointer;
+  }
+  .toggle-all:hover{ color:var(--ink); border-color:var(--ink-faint); }
+
+  /* ---- step accordions ---- */
+  .step{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; margin-bottom:0.75rem;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .step > summary{
+    list-style:none; cursor:pointer; padding:0.95rem 1.1rem; display:flex; align-items:flex-start; gap:0.85rem;
+  }
+  .step > summary::-webkit-details-marker{ display:none; }
+  .step .num{
+    font-family:var(--font-mono); font-weight:600; font-size:0.85rem; color:var(--ink-faint);
+    min-width:1.7rem; padding-top:0.15rem;
+  }
+  .step-head{ flex:1; min-width:0; }
+  .step-title{ font-family:var(--font-display); font-weight:600; font-size:1.03rem; }
+  .step-cells{ font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-faint); margin-left:0.5rem; }
+  .step-purpose{ margin:0.25rem 0 0; font-size:0.89rem; color:var(--ink-soft); }
+  .chev{ margin-top:0.3rem; color:var(--ink-faint); transition:transform 0.15s ease; flex-shrink:0; }
+  .step[open] .chev{ transform:rotate(90deg); }
+  .step-body{ padding:0 1.1rem 1.15rem 3.35rem; }
+  .step-body p{ margin:0 0 0.85rem; max-width:68ch; }
+  .step-body p:last-child{ margin-bottom:0; }
+  .step-body table{ border-collapse:collapse; margin:0.6rem 0 1rem; font-size:0.86rem; width:100%; max-width:640px; }
+  .step-body th,.step-body td{ border:1px solid var(--line); padding:0.4rem 0.65rem; text-align:left; vertical-align:top; }
+  .step-body th{ background:var(--surface-2); font-weight:600; font-size:0.78rem; }
+  .step-body td code{ font-size:0.8em; }
+
+  pre{
+    background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:0.9rem 1rem;
+    overflow-x:auto; margin:0.7rem 0 1rem; font-size:0.82rem; line-height:1.55; -webkit-overflow-scrolling:touch;
+  }
+  pre code{ font-family:var(--font-mono); color:inherit; }
+  pre .kw{ color:var(--code-accent); }
+  pre .cm{ color:#8890A8; font-style:italic; }
+
+  /* ---- diagrams ---- */
+  figure.diagram{ margin:1.3rem 0 1.5rem; }
+  figure.diagram .svg-wrap{ overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:0.9rem; }
+  figure.diagram svg{ display:block; width:100%; height:auto; min-width:480px; }
+  figure.diagram figcaption{ margin-top:0.55rem; font-size:0.8rem; color:var(--ink-faint); }
+  svg text{ font-family:var(--font-body); fill:currentColor; }
+  svg .mono{ font-family:var(--font-mono); }
+  svg .lbl{ font-size:11px; fill:var(--ink-faint); }
+  svg .strong-lbl{ font-size:12px; font-weight:600; }
+  svg .accent-mark{ color:var(--accent); }
+
+  footer.page-end{ border-top:1px solid var(--line); padding:2.2rem 1.5rem 3rem; }
+  .footer-inner{ max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:0.5rem; }
+  .footer-inner .eyebrow{ margin-bottom:0.2rem; }
+  .footer-inner p{ margin:0; color:var(--ink-soft); max-width:68ch; }
+
+  .backtop{
+    position:fixed; right:1.1rem; bottom:1.1rem; width:2.6rem; height:2.6rem; border-radius:50%;
+    background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; text-decoration:none; opacity:0; pointer-events:none;
+    transition:opacity 0.2s ease;
+  }
+  .backtop.show{ opacity:1; pointer-events:auto; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="eyebrow">Amazon Bedrock AgentCore · Lab 1 · notebook.ipynb 逐步指南</div>
+    <h1>從原型到生產：客服智能體的三次升級</h1>
+    <p class="lede">
+      這份頁面逐一拆解 <code>notebook.ipynb</code> 的 34 個 cell，說明 Strands Agents 建立的客服智能體如何依序疊加
+      <strong style="color:var(--cat-1)">本地工具</strong>、<strong style="color:var(--cat-2)">AgentCore Memory</strong> 與
+      <strong style="color:var(--cat-3)">AgentCore Gateway／Identity</strong> 三種能力，一路走到可上生產的架構。
+    </p>
+    <div class="tagrow">
+      <span class="tag">Strands Agents</span>
+      <span class="tag">AgentCore Memory</span>
+      <span class="tag">AgentCore Gateway</span>
+      <span class="tag">AgentCore Identity</span>
+      <span class="tag">OAuth2 / JWT</span>
+      <span class="tag">Amazon Nova Pro</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="頁面導覽">
+    <ol>
+      <li><a href="#overview" data-toc>總覽</a></li>
+      <li><a href="#task-1-1" data-toc><span class="toc-dot" style="background:var(--cat-1)"></span>Task 1.1 基礎智能體</a></li>
+      <li><a href="#task-1-2" data-toc><span class="toc-dot" style="background:var(--cat-2)"></span>Task 1.2 Memory</a></li>
+      <li><a href="#task-1-3" data-toc><span class="toc-dot" style="background:var(--cat-3)"></span>Task 1.3 Gateway/Identity</a></li>
+      <li><a href="#pipeline" data-toc>整體流程圖</a></li>
+      <li><a href="#next" data-toc>總結與下一步</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <h2>總覽：同一個智能體，逐步疊加能力</h2>
+      <p class="intro">
+        三個任務不是各自獨立的範例，而是「持續增強同一個智能體」——Task 1.2 只在 Task 1.1 的智能體上多掛一個
+        <code>hooks</code> 參數，Task 1.3 也只是把部分工具換成 Gateway 提供的版本。讀完整頁後，你會在
+        <a href="#pipeline">整體流程圖</a> 看到這三步如何合而為一。
+      </p>
+
+      <div class="stage-row">
+        <div class="stage-card stage-1">
+          <div class="stage-eyebrow">TASK 1.1</div>
+          <h3>Basic Agent</h3>
+          <p>Amazon Nova Pro + System Prompt + 4 個本地 <code>@tool</code> 工具，跑在單一 Python process 裡。</p>
+        </div>
+        <div class="stage-arrow" aria-hidden="true">→</div>
+        <div class="stage-card stage-2">
+          <div class="stage-eyebrow">TASK 1.2</div>
+          <h3>+ AgentCore Memory</h3>
+          <p>掛上 <code>hooks=[memory_hooks]</code>，讓智能體跨會話記得客戶偏好與事實。</p>
+        </div>
+        <div class="stage-arrow" aria-hidden="true">→</div>
+        <div class="stage-card stage-3">
+          <div class="stage-eyebrow">TASK 1.3</div>
+          <h3>+ Gateway / Identity</h3>
+          <p>部分工具搬到 AgentCore Gateway，用 OAuth2 / JWT 做入站驗證，工具集中治理。</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>怎麼讀這頁：</strong> 每個任務底下的步驟預設收合，點一下標題可展開「目的」與「詳細說明」；每個小節右上角有「全部展開／收合」按鈕，方便你用 Ctrl/Cmd+F 搜尋程式碼片段。
+      </div>
+    </section>
+
+    <!-- ============================================================ TASK 1.1 ============================================================ -->
+    <section id="task-1-1">
+      <div class="section-head">
+        <h2>Task 1.1　基礎設置與基本智能體建立</h2>
+        <span class="cat-chip cat-1-chip"><span class="dot"></span>FOUNDATION</span>
+      </div>
+      <p class="intro">
+        目標是先組出一個「能跑」的客服智能體原型，再回頭看它缺了什麼——這個缺口正是 Task 1.2、1.3 要補的。
+      </p>
+      <div class="section-tools"><button class="toggle-all" data-target="task-1-1">全部展開</button></div>
+
+      <details class="step" id="step-1" open>
+        <summary>
+          <span class="num">01</span>
+          <span class="step-head">
+            <span class="step-title">環境準備與函式庫載入</span>
+            <span class="step-cells">Cell 0–2</span>
+            <p class="step-purpose">安裝依賴、匯入 AWS / AgentCore / Strands 函式庫，設定基本參數。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            匯入 <code>boto3</code>、<code>requests</code> 等基礎套件；AgentCore 的 <code>MemoryClient</code>、<code>StrategyType</code>（先匯入供 Task 1.2 用）；
+            Strands 的 <code>Agent</code>、<code>BedrockModel</code>、<code>MCPClient</code> 與 hook 相關類別。再從 <code>lab_helpers.lab1_strands_agent</code>
+            匯入四個本地工具與 <code>SYSTEM_PROMPT</code>、<code>MODEL_ID</code>。同時設定 <code>REGION="us-east-1"</code>、固定的
+            <code>CUSTOMER_ID="customer_001"</code> 與隨機的 <code>SESSION_ID</code>。這一步純粹是準備工作，尚未呼叫任何 AWS 服務。
+          </p>
+        </div>
+      </details>
+
+      <details class="step" id="step-2">
+        <summary>
+          <span class="num">02</span>
+          <span class="step-head">
+            <span class="step-title">檢視本地工具程式碼</span>
+            <span class="step-cells">Cell 3</span>
+            <p class="step-purpose">動手之前，先理解智能體「能做什麼」——四個用 <code>@tool</code> 定義的本地工具。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>純閱讀步驟，要求打開 <code>lab_helpers/lab1_strands_agent.py</code> 檢視：</p>
+          <table>
+            <tr><th>工具</th><th>用途</th></tr>
+            <tr><td><code>get_product_info()</code></td><td>產品技術規格（寫死的模擬資料）</td></tr>
+            <tr><td><code>get_return_policy()</code></td><td>退換貨政策（寫死的模擬資料）</td></tr>
+            <tr><td><code>get_technical_support()</code></td><td>查 Bedrock Knowledge Base 做 RAG 檢索</td></tr>
+            <tr><td><code>web_search()</code></td><td>用 <code>ddgs</code> 做 DuckDuckGo 網路搜尋</td></tr>
+          </table>
+          <p><code>SYSTEM_PROMPT</code> 定義了智能體的人設：一位電子產品電商的專業客服，並列出可用工具與使用原則。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-3">
+        <summary>
+          <span class="num">03</span>
+          <span class="step-head">
+            <span class="step-title">建立 Basic Agent</span>
+            <span class="step-cells">Cell 4–5</span>
+            <p class="step-purpose">組裝第一個可運作的智能體——模型 + 系統提示 + 本地工具。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            一個 Agent 的三個核心組成：Foundation Model（推理決策）、System Prompt（行為規範）、Specialized Tools（四個本地工具）。
+            收到問題後的內部流程：分析問題 → 選擇工具 → 執行工具 → 整合回應 → 品質檢查。
+          </p>
+<pre><code><span class="kw">model</span> = BedrockModel(model_id=MODEL_ID, temperature=<span class="kw">0.3</span>, region_name=REGION)
+basic_agent = Agent(
+    model=model,
+    tools=[get_product_info, get_return_policy,
+           get_technical_support, web_search],
+    system_prompt=SYSTEM_PROMPT
+)</code></pre>
+          <p><code>MODEL_ID</code> 為 <code>us.amazon.nova-pro-v1:0</code>（Amazon Nova Pro），<code>temperature=0.3</code> 讓回答偏穩定。這一步完全在本機執行，沒有建立任何 AgentCore 雲端資源。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-4">
+        <summary>
+          <span class="num">04</span>
+          <span class="step-head">
+            <span class="step-title">測試 Basic Agent</span>
+            <span class="step-cells">Cell 6–7</span>
+            <p class="step-purpose">驗證智能體能理解問題並正確呼叫工具產生答案。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            呼叫 <code>basic_agent("What's the return policy for laptops?")</code>。智能體自主判斷應呼叫
+            <code>get_return_policy(product_category="laptops")</code>，取得政策內容後生成格式化的回覆。
+            驗證了「模型推理 + 工具呼叫 + 回應整合」這條最基本的 Agent 迴路已經跑通。
+          </p>
+        </div>
+      </details>
+
+      <details class="step" id="step-5">
+        <summary>
+          <span class="num">05</span>
+          <span class="step-head">
+            <span class="step-title">檢視原型限制</span>
+            <span class="step-cells">Cell 8</span>
+            <p class="step-purpose">點出三個關鍵缺陷，作為進入 Task 1.2 / 1.3 的動機。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            <strong>無持久記憶</strong>——只記得當下這次對話，換一個 session 就完全失憶；
+            <strong>僅本地工具</strong>——工具程式碼寫死在單一檔案，無法被其他智能體共用；
+            <strong>無身分管理</strong>——無法代表特定使用者行動，也沒有存取控制機制。
+            這三點分別對應 Task 1.2（Memory）與 Task 1.3（Gateway + Identity）要解決的問題。
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============================================================ TASK 1.2 ============================================================ -->
+    <section id="task-1-2">
+      <div class="section-head">
+        <h2>Task 1.2　以 AgentCore Memory 強化記憶</h2>
+        <span class="cat-chip cat-2-chip"><span class="dot"></span>MEMORY</span>
+      </div>
+      <p class="intro">
+        情境：客戶三週前聯繫過客服，說明了偏好與歷史，這次卻得從頭重講一次——因為智能體只有單次對話的短期記憶。
+        這個任務要讓長期記憶的讀寫「自動發生」，不需要每次手動呼叫 Memory API。
+      </p>
+      <div class="section-tools"><button class="toggle-all" data-target="task-1-2">全部展開</button></div>
+
+      <details class="step" id="step-6" open>
+        <summary>
+          <span class="num">06</span>
+          <span class="step-head">
+            <span class="step-title">建立／取得 AgentCore Memory 資源</span>
+            <span class="step-cells">Cell 9–10</span>
+            <p class="step-purpose">建立具備兩種策略的 Memory 資源，作為智能體的長期記憶儲存層。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            區分短期記憶（單次對話上下文，由 Strands Agent 框架自動處理）與長期記憶（跨對話萃取出的事實、偏好、摘要，由
+            AgentCore Memory 服務負責）。<code>create_or_get_memory_resource()</code> 先嘗試從 SSM 讀取既有的 <code>memory_id</code>，
+            不存在才建立新資源：
+          </p>
+          <table>
+            <tr><th>策略</th><th>用途</th><th>Namespace</th></tr>
+            <tr><td><code>USER_PREFERENCE</code></td><td>擷取客戶偏好與行為</td><td><code>support/customer/{actorId}/preferences</code></td></tr>
+            <tr><td><code>SEMANTIC</code></td><td>儲存對話中的事實資訊</td><td><code>support/customer/{actorId}/semantic</code></td></tr>
+          </table>
+          <p><code>event_expiry_days=90</code>：原始對話事件 90 天後過期，但萃取出的長期記憶不受影響。建立完成後 <code>memory_id</code> 寫回 SSM 供重複使用。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-7">
+        <summary>
+          <span class="num">07</span>
+          <span class="step-head">
+            <span class="step-title">灌入歷史客服互動紀錄</span>
+            <span class="step-cells">Cell 11–12</span>
+            <p class="step-purpose">模擬一位「老客戶」的歷史對話，讓 Memory 有素材可萃取洞察。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            準備三段虛構歷史對話——MacBook Pro 過熱、遊戲耳機退貨政策、想找 16GB RAM 以上且偏好 ThinkPad 的程式設計筆電——組成
+            <code>(text, role)</code> 的 <code>previous_interactions</code>，透過
+          </p>
+<pre><code>memory_client.create_event(
+    memory_id=memory_id, actor_id=<span class="kw">"customer_001"</span>,
+    session_id=<span class="kw">"previous_session"</span>, messages=previous_interactions
+)</code></pre>
+          <p>寫入 Memory。寫入後 AgentCore Memory 會在背景非同步地依兩種策略，把原始對話萃取成結構化的長期記憶，這需要一些處理時間。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-8">
+        <summary>
+          <span class="num">08</span>
+          <span class="step-head">
+            <span class="step-title">定義 Memory Hooks</span>
+            <span class="step-cells">Cell 13–14</span>
+            <p class="step-purpose">讓「讀取客戶情境」與「寫回新對話」自動發生，不需手動呼叫 Memory API。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            <code>CustomerSupportMemoryHooks(HookProvider)</code> 掛上兩個回呼：<code>retrieve_customer_context</code> 掛在
+            <code>MessageAddedEvent</code>，回應前依兩個 namespace 各查詢最相關的 3 筆記憶，插入使用者訊息前方；
+            <code>save_support_interaction</code> 掛在 <code>AfterInvocationEvent</code>，回應後把最新一組「提問／回覆」寫回 Memory。
+          </p>
+          <figure class="diagram">
+            <div class="svg-wrap">
+              <svg viewBox="0 0 760 250" role="img" aria-label="Memory Hook 讀寫循環：使用者訊息觸發回應前 hook 從 AgentCore Memory 讀取情境，Agent 回覆後由回應後 hook 把新對話寫回 Memory">
+                <defs>
+                  <marker id="ar1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/></marker>
+                </defs>
+                <!-- top row boxes -->
+                <g class="mono">
+                  <rect x="10" y="20" width="150" height="56" rx="7" fill="none" stroke="currentColor" opacity="0.55"/>
+                  <text x="85" y="53" text-anchor="middle" class="strong-lbl">使用者訊息</text>
+
+                  <rect x="205" y="20" width="180" height="56" rx="7" fill="none" stroke="var(--cat-2)"/>
+                  <text x="295" y="45" text-anchor="middle" class="strong-lbl" fill="var(--cat-2)">retrieve_customer</text>
+                  <text x="295" y="61" text-anchor="middle" class="lbl">_context（回應前）</text>
+
+                  <rect x="430" y="20" width="150" height="56" rx="7" fill="none" stroke="currentColor" opacity="0.55"/>
+                  <text x="505" y="53" text-anchor="middle" class="strong-lbl">Agent 生成回覆</text>
+
+                  <rect x="625" y="20" width="130" height="56" rx="7" fill="none" stroke="var(--cat-2)"/>
+                  <text x="690" y="45" text-anchor="middle" class="strong-lbl" fill="var(--cat-2)">save_support</text>
+                  <text x="690" y="61" text-anchor="middle" class="lbl">_interaction（回應後）</text>
+                </g>
+                <line x1="160" y1="48" x2="200" y2="48" stroke="currentColor" opacity="0.55" marker-end="url(#ar1)"/>
+                <line x1="385" y1="48" x2="425" y2="48" stroke="currentColor" opacity="0.55" marker-end="url(#ar1)"/>
+                <line x1="580" y1="48" x2="620" y2="48" stroke="currentColor" opacity="0.55" marker-end="url(#ar1)"/>
+
+                <!-- memory store -->
+                <rect x="295" y="165" width="220" height="62" rx="7" fill="var(--cat-2-wash)" stroke="var(--cat-2)"/>
+                <text x="405" y="192" text-anchor="middle" class="strong-lbl mono" fill="var(--cat-2)">AgentCore Memory</text>
+                <text x="405" y="209" text-anchor="middle" class="lbl">USER_PREFERENCE + SEMANTIC</text>
+
+                <!-- retrieve arrow: memory -> retrieve box -->
+                <line x1="330" y1="165" x2="300" y2="80" stroke="var(--cat-2)" stroke-dasharray="4 3" marker-end="url(#ar1)"/>
+                <text x="215" y="130" class="lbl" fill="var(--cat-2)">讀取 top_k=3</text>
+
+                <!-- save arrow: save box -> memory -->
+                <line x1="670" y1="80" x2="480" y2="165" stroke="var(--cat-2)" marker-end="url(#ar1)"/>
+                <text x="560" y="130" class="lbl" fill="var(--cat-2)">寫回 create_event()</text>
+              </svg>
+            </div>
+            <figcaption>Memory Hook 的讀寫循環：回應前從 AgentCore Memory 讀取相關情境並插入提問，回應後把新的一組對話寫回同一個 Memory 資源。</figcaption>
+          </figure>
+          <p>整個機制對使用者完全透明——智能體程式碼幾乎不變，只多帶了 <code>hooks=[memory_hooks]</code>。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-9">
+        <summary>
+          <span class="num">09</span>
+          <span class="step-head">
+            <span class="step-title">建立記憶增強智能體</span>
+            <span class="step-cells">Cell 15–16</span>
+            <p class="step-purpose">把記憶 Hook 接上智能體，得到一個「有記憶」的客服智能體。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+<pre><code>memory_hooks = CustomerSupportMemoryHooks(memory_id, memory_client, CUSTOMER_ID, SESSION_ID)
+memory_agent = Agent(
+    model=model,
+    tools=[get_product_info, get_return_policy, get_technical_support, web_search],
+    hooks=[memory_hooks],
+    system_prompt=SYSTEM_PROMPT
+)</code></pre>
+          <p>與步驟 3 的 <code>basic_agent</code> 相比，工具與系統提示完全相同，唯一差異是多帶了 <code>hooks=[memory_hooks]</code>——記憶能力是「疊加」上去的，不需要重寫智能體本身的邏輯。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-10">
+        <summary>
+          <span class="num">10</span>
+          <span class="step-head">
+            <span class="step-title">測試記憶增強智能體</span>
+            <span class="step-cells">Cell 17</span>
+            <p class="step-purpose">驗證智能體能「想起」先前灌入的歷史偏好，不需客戶重新描述。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            由於步驟 7 寫入的記憶需要背景非同步處理，先 <code>time.sleep(90)</code> 等待 90 秒，再呼叫
+            <code>memory_agent("What are my laptop preferences?")</code>。此時 <code>retrieve_customer_context</code> 會自動查到
+            「偏好 ThinkPad、需要 16GB RAM、重視 Linux 相容性」等先前萃取出的偏好並注入提問，客戶完全不需要重新說明需求。
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============================================================ TASK 1.3 ============================================================ -->
+    <section id="task-1-3">
+      <div class="section-head">
+        <h2>Task 1.3　以 Gateway 與 Identity 擴展工具規模</h2>
+        <span class="cat-chip cat-3-chip"><span class="dot"></span>GATEWAY / IDENTITY</span>
+      </div>
+      <p class="intro">
+        企業往往有數百個 API、Lambda、工具，各自散落在不同智能體程式碼中，難以安全共用與治理。AgentCore Gateway
+        用統一的 <strong>MCP（Model Context Protocol）</strong> 端點暴露既有工具，AgentCore Identity 負責入站的 OAuth2 / JWT 驗證。
+      </p>
+      <div class="section-tools"><button class="toggle-all" data-target="task-1-3">全部展開</button></div>
+
+      <details class="step" id="step-11" open>
+        <summary>
+          <span class="num">11</span>
+          <span class="step-head">
+            <span class="step-title">理解 Gateway 與 OAuth2/JWT 認證機制</span>
+            <span class="step-cells">Cell 18–19</span>
+            <p class="step-purpose">動手之前，先弄懂 Gateway 的角色與它背後的安全機制。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>
+            AgentCore Gateway 是一個全託管的 MCP 伺服器：既有 Lambda、企業 API 可以被安全地暴露成工具，並支援語意化的工具探索。
+            AgentCore Identity 則扮演入站身分驗證（inbound auth，與 Cognito 協作）的角色；出站驗證（存取第三方服務）本 Lab 不使用。
+          </p>
+          <figure class="diagram">
+            <div class="svg-wrap">
+              <svg viewBox="0 0 640 400" role="img" aria-label="OAuth2 用戶端憑證流程：Agent 向 Cognito 換取 JWT，帶著 Bearer Token 呼叫 Gateway，Gateway 再向 Cognito 驗證後才放行">
+                <defs>
+                  <marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/></marker>
+                </defs>
+                <!-- lifelines -->
+                <g class="mono">
+                  <text x="70" y="24" text-anchor="middle" class="strong-lbl">Agent</text>
+                  <text x="320" y="24" text-anchor="middle" class="strong-lbl" fill="var(--cat-3)">Cognito</text>
+                  <text x="570" y="24" text-anchor="middle" class="strong-lbl" fill="var(--cat-3)">Gateway</text>
+                </g>
+                <line x1="70" y1="36" x2="70" y2="380" stroke="currentColor" opacity="0.35"/>
+                <line x1="320" y1="36" x2="320" y2="380" stroke="var(--cat-3)" opacity="0.5"/>
+                <line x1="570" y1="36" x2="570" y2="380" stroke="var(--cat-3)" opacity="0.5"/>
+
+                <!-- step 1 -->
+                <line x1="70" y1="70" x2="316" y2="70" stroke="currentColor" marker-end="url(#ar2)"/>
+                <text x="90" y="62" class="lbl">① client_id + client_secret</text>
+
+                <!-- step 2 return -->
+                <line x1="320" y1="110" x2="74" y2="110" stroke="currentColor" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+                <text x="90" y="102" class="lbl">② 簽發 JWT access_token</text>
+
+                <!-- step 3 -->
+                <line x1="70" y1="160" x2="566" y2="160" stroke="var(--cat-3)" stroke-width="1.6" marker-end="url(#ar2)"/>
+                <text x="90" y="152" class="lbl" fill="var(--cat-3)">③ Authorization: Bearer &lt;token&gt;</text>
+
+                <!-- step 4 -->
+                <line x1="570" y1="205" x2="324" y2="205" stroke="currentColor" marker-end="url(#ar2)"/>
+                <text x="340" y="197" class="lbl">④ 驗證 token（discoveryUrl）</text>
+
+                <!-- step 5 return -->
+                <line x1="320" y1="250" x2="566" y2="250" stroke="currentColor" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+                <text x="340" y="242" class="lbl">⑤ allowedClients 中 → 有效</text>
+
+                <!-- step 6 -->
+                <line x1="570" y1="300" x2="74" y2="300" stroke="var(--cat-3)" stroke-width="1.6" marker-end="url(#ar2)"/>
+                <text x="90" y="292" class="lbl" fill="var(--cat-3)">⑥ 放行：回傳 MCP 工具結果</text>
+
+                <rect x="30" y="335" width="580" height="50" rx="7" fill="var(--cat-3-wash)" stroke="var(--cat-3)"/>
+                <text x="320" y="365" text-anchor="middle" class="lbl" fill="var(--cat-3)">只有名列 allowedClients、且 token 未過期的請求，才能通過 ⑥</text>
+              </svg>
+            </div>
+            <figcaption>OAuth2 client-credentials 流程：JWT 由 Cognito 簽發並在每次呼叫 Gateway 時驗證，密鑰全程不出現在程式碼中（存於 SSM）。</figcaption>
+          </figure>
+        </div>
+      </details>
+
+      <details class="step" id="step-12">
+        <summary>
+          <span class="num">12</span>
+          <span class="step-head">
+            <span class="step-title">準備 JWT 授權設定</span>
+            <span class="step-cells">Cell 20</span>
+            <p class="step-purpose">從 SSM 取出 Cognito 設定，組成 Gateway 要求的授權設定物件。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+<pre><code>auth_config = {
+    <span class="kw">"customJWTAuthorizer"</span>: {
+        <span class="kw">"allowedClients"</span>: [machine_client_id],
+        <span class="kw">"discoveryUrl"</span>: cognito_discovery_url
+    }
+}</code></pre>
+          <p><code>allowedClients</code> 是白名單，只有這個 client_id 簽發的 token 能通過驗證；<code>discoveryUrl</code> 讓 Gateway 動態取得 Cognito 的 OAuth metadata，不需手動填每個端點。</p>
+        </div>
+      </details>
+
+      <details class="step" id="step-13">
+        <summary>
+          <span class="num">13</span>
+          <span class="step-head">
+            <span class="step-title">建立 AgentCore Gateway</span>
+            <span class="step-cells">Cell 21–22</span>
+            <p class="step-purpose">建立實際的 Gateway 資源，作為智能體與後端 Lambda 之間的安全代理層。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+<pre><code>gateway_client.create_gateway(
+    name=<span class="kw">"customersupport-gw"</span>,
+    roleArn=get_ssm_parameter(<span class="cm">"…/gateway_iam_role"</span>),
+    protocolType=<span class="kw">"MCP"</span>,
+    authorizerType=<span class="kw">"CUSTOM_JWT"</span>,
+    authorizerConfiguration=auth_config,
+)</code></pre>
+          <p>
+            建立後輪詢 <code>get_gateway()</code> 直到狀態變成 <code>READY</code>（<code>FAILED</code> 時拋出自訂例外），並把
+            <code>gateway_id</code> 寫回 SSM。程式碼也處理了 <code>ConflictException</code>（Gateway 已存在時直接讀取既有資源），讓這個 cell 可重複執行。
+            CloudFormation 只部署了一支 Lambda（<code>CustomerSupportLambda</code>）就能處理多個工具操作。
+          </p>
+        </div>
+      </details>
+
+      <details class="step" id="step-14">
+        <summary>
+          <span class="num">14</span>
+          <span class="step-head">
+            <span class="step-title">新增 Lambda Target</span>
+            <span class="step-cells">Cell 23–24</span>
+            <p class="step-purpose">告訴 Gateway 這支 Lambda 提供哪些工具、參數長什麼樣子。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <p>以 JSON Schema 描述兩個工具，掛載到步驟 13 建立的 Gateway：</p>
+          <table>
+            <tr><th>工具</th><th>必填參數</th></tr>
+            <tr><td><code>check_warranty_status</code></td><td><code>serial_number</code>（<code>customer_email</code> 選填）</td></tr>
+            <tr><td><code>web_search</code></td><td><code>keywords</code>（<code>region</code>／<code>max_results</code> 選填）</td></tr>
+          </table>
+          <p>
+            這與步驟 2 中本地 <code>web_search()</code> 功能相同，這裡改由 Gateway／Lambda 提供——示範同一種能力如何從「本地工具」遷移為「集中式工具」。
+            <code>credentialProviderConfigurations</code> 指定用 <code>GATEWAY_IAM_ROLE</code>，讓 Gateway 以自己的角色權限呼叫 Lambda。
+          </p>
+        </div>
+      </details>
+
+      <details class="step" id="step-15">
+        <summary>
+          <span class="num">15</span>
+          <span class="step-head">
+            <span class="step-title">建立具備 OAuth 認證的 MCP Client</span>
+            <span class="step-cells">Cell 25–26</span>
+            <p class="step-purpose">讓智能體能以合法的 JWT token 連上 Gateway，取得可呼叫的工具清單。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+<pre><code>token_response = get_oauth_token()  <span class="cm"># grant_type=client_credentials</span>
+access_token = token_response[<span class="kw">'access_token'</span>]
+
+mcp_client = MCPClient(
+    <span class="kw">lambda</span>: streamablehttp_client(
+        gateway_url,
+        headers={<span class="kw">"Authorization"</span>: <span class="kw">f"Bearer {access_token}"</span>},
+    )
+)</code></pre>
+          <p>
+            <code>get_oauth_token()</code> 以 OAuth2 client-credentials 流程，帶著 <code>client_id</code> / <code>client_secret</code> / <code>scope</code>
+            向 Cognito 的 token 端點換取 JWT。Strands 的 <code>MCPClient</code> 包裝一個帶 Bearer token 標頭的 HTTP 串流連線——正是上面認證流程圖的程式碼實作。
+          </p>
+        </div>
+      </details>
+
+      <details class="step" id="step-16">
+        <summary>
+          <span class="num">16</span>
+          <span class="step-head">
+            <span class="step-title">合併本地與 Gateway 工具，建立 Enhanced Agent</span>
+            <span class="step-cells">Cell 27–28</span>
+            <p class="step-purpose">把記憶 Hook、本地工具、Gateway 工具合而為一，得到能力最完整的智能體。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+<pre><code>mcp_client.start()
+gateway_tools = mcp_client.list_tools_sync()
+
+all_tools = [get_product_info, get_return_policy, get_technical_support] + gateway_tools
+enhanced_agent = Agent(
+    model=model, tools=all_tools, hooks=[memory_hooks], system_prompt=SYSTEM_PROMPT
+)</code></pre>
+          <p>刻意拿掉本地的 <code>web_search</code>（同名能力已由 Gateway 提供），形成「部分工具留本地求快、部分集中在 Gateway 求可重用」的混合式架構：</p>
+          <figure class="diagram">
+            <div class="svg-wrap">
+              <svg viewBox="0 0 640 400" role="img" aria-label="Enhanced Agent 架構：中央的 Enhanced Agent 連接左側本地工具、右側經 MCP 與 OAuth 驗證的 Gateway 工具，並在下方掛上 Memory Hooks 讀寫客戶情境">
+                <defs>
+                  <marker id="ar3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/></marker>
+                </defs>
+                <!-- local tools box -->
+                <rect x="20" y="30" width="200" height="100" rx="8" fill="var(--cat-1-wash)" stroke="var(--cat-1)"/>
+                <text x="120" y="55" text-anchor="middle" class="strong-lbl mono" fill="var(--cat-1)">本地工具</text>
+                <text x="120" y="78" text-anchor="middle" class="lbl">product info</text>
+                <text x="120" y="94" text-anchor="middle" class="lbl">return policy</text>
+                <text x="120" y="110" text-anchor="middle" class="lbl">technical support</text>
+
+                <!-- gateway tools box -->
+                <rect x="420" y="30" width="200" height="100" rx="8" fill="var(--cat-3-wash)" stroke="var(--cat-3)"/>
+                <text x="520" y="55" text-anchor="middle" class="strong-lbl mono" fill="var(--cat-3)">Gateway 工具</text>
+                <text x="520" y="78" text-anchor="middle" class="lbl">web_search</text>
+                <text x="520" y="94" text-anchor="middle" class="lbl">check_warranty_status</text>
+                <text x="520" y="112" text-anchor="middle" class="lbl">經 MCP + OAuth Bearer</text>
+
+                <!-- center agent -->
+                <rect x="220" y="160" width="200" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                <text x="320" y="200" text-anchor="middle" class="strong-lbl">Enhanced Agent</text>
+
+                <!-- memory hooks box -->
+                <rect x="170" y="300" width="300" height="66" rx="8" fill="var(--cat-2-wash)" stroke="var(--cat-2)"/>
+                <text x="320" y="328" text-anchor="middle" class="strong-lbl mono" fill="var(--cat-2)">Memory Hooks</text>
+                <text x="320" y="346" text-anchor="middle" class="lbl">跨會話個人化（讀取／寫回）</text>
+
+                <!-- connectors -->
+                <line x1="220" y1="80" x2="222" y2="195" stroke="var(--cat-1)" marker-end="url(#ar3)"/>
+                <line x1="420" y1="80" x2="418" y2="195" stroke="var(--cat-3)" marker-end="url(#ar3)"/>
+                <line x1="320" y1="230" x2="320" y2="296" stroke="var(--cat-2)" marker-end="url(#ar3)"/>
+              </svg>
+            </div>
+            <figcaption>Enhanced Agent 同時持有本地工具與經 OAuth 驗證的 Gateway 工具，並透過 Memory Hooks 在每次對話前後讀寫客戶情境。</figcaption>
+          </figure>
+        </div>
+      </details>
+
+      <details class="step" id="step-17">
+        <summary>
+          <span class="num">17</span>
+          <span class="step-head">
+            <span class="step-title">測試 Enhanced Agent</span>
+            <span class="step-cells">Cell 29–32</span>
+            <p class="step-purpose">驗證合併後的智能體能同時正確使用本地工具、Gateway 工具，並保有客戶記憶。</p>
+          </span>
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </summary>
+        <div class="step-body">
+          <table>
+            <tr><th>測試情境</th><th>驗證重點</th></tr>
+            <tr><td>「Search for latest iPhone 15 troubleshooting tips」</td><td>Gateway 上的 <code>web_search</code> 工具</td></tr>
+            <tr><td>「Check warranty status for serial number ABC12345678」</td><td>代理企業 Lambda 的 <code>check_warranty_status</code></td></tr>
+            <tr><td>「I need gaming headphones again, and also search for the latest reviews」</td><td>記憶（先前問過的耳機偏好）＋ Gateway 搜尋同時觸發</td></tr>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============================================================ PIPELINE ============================================================ -->
+    <section id="pipeline">
+      <h2>整體流程圖</h2>
+      <p class="intro">三個任務如何在同一個智能體上依序疊加，從 Basic Agent 一路走到具備記憶與集中工具的 Enhanced Agent。</p>
+      <figure class="diagram">
+        <div class="svg-wrap">
+          <svg viewBox="0 0 720 620" role="img" aria-label="完整流程圖：Task 1.1 建立 Basic Agent 並發現三個限制，Task 1.2 加上 Memory Hooks 解決記憶問題，Task 1.3 加上 Gateway 與 OAuth 解決工具治理問題，最終合流成 Enhanced Agent">
+            <defs>
+              <marker id="ar4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/></marker>
+            </defs>
+
+            <!-- Task 1.1 lane -->
+            <rect x="20" y="10" width="330" height="120" rx="9" fill="var(--cat-1-wash)" stroke="var(--cat-1)"/>
+            <text x="38" y="32" class="strong-lbl mono" fill="var(--cat-1)">TASK 1.1</text>
+            <text x="38" y="55" class="lbl">01–04　本地工具 ＋ System Prompt</text>
+            <text x="38" y="72" class="lbl">→ Basic Agent 建立並測試通過</text>
+            <text x="38" y="96" class="lbl" fill="var(--cat-1)">05　發現：無記憶／僅本地工具／無身分</text>
+
+            <line x1="185" y1="130" x2="185" y2="168" stroke="currentColor" opacity="0.5" marker-end="url(#ar4)"/>
+
+            <!-- Task 1.2 lane -->
+            <rect x="20" y="172" width="330" height="150" rx="9" fill="var(--cat-2-wash)" stroke="var(--cat-2)"/>
+            <text x="38" y="194" class="strong-lbl mono" fill="var(--cat-2)">TASK 1.2</text>
+            <text x="38" y="217" class="lbl">06　建立 Memory（2 種策略）</text>
+            <text x="38" y="234" class="lbl">07　灌入歷史對話</text>
+            <text x="38" y="251" class="lbl">08　定義 Memory Hooks（讀／寫）</text>
+            <text x="38" y="268" class="lbl">09–10　建立並測試記憶增強 Agent</text>
+            <text x="38" y="298" class="lbl" fill="var(--cat-2)">→ 只多帶 hooks=[memory_hooks]</text>
+
+            <line x1="185" y1="322" x2="185" y2="360" stroke="currentColor" opacity="0.5" marker-end="url(#ar4)"/>
+
+            <!-- Task 1.3 lane -->
+            <rect x="20" y="364" width="330" height="220" rx="9" fill="var(--cat-3-wash)" stroke="var(--cat-3)"/>
+            <text x="38" y="386" class="strong-lbl mono" fill="var(--cat-3)">TASK 1.3</text>
+            <text x="38" y="409" class="lbl">11–12　理解並設定 OAuth2 / JWT</text>
+            <text x="38" y="426" class="lbl">13–14　建立 Gateway ＋ Lambda Target</text>
+            <text x="38" y="443" class="lbl">15　以 Cognito Token 建立 MCP Client</text>
+            <text x="38" y="460" class="lbl">16　合併本地 ＋ Gateway 工具</text>
+            <text x="38" y="477" class="lbl">17　測試 Enhanced Agent</text>
+            <text x="38" y="507" class="lbl" fill="var(--cat-3)">→ 工具集中治理、入站驗證到位</text>
+
+            <!-- right side: merge into final -->
+            <line x1="350" y1="70" x2="470" y2="70" stroke="var(--cat-1)" marker-end="url(#ar4)"/>
+            <line x1="350" y1="240" x2="470" y2="240" stroke="var(--cat-2)" marker-end="url(#ar4)"/>
+            <line x1="350" y1="470" x2="470" y2="470" stroke="var(--cat-3)" marker-end="url(#ar4)"/>
+            <line x1="470" y1="70" x2="470" y2="260" stroke="currentColor" opacity="0.4"/>
+            <line x1="470" y1="260" x2="470" y2="470" stroke="currentColor" opacity="0.4"/>
+            <line x1="470" y1="260" x2="500" y2="260" stroke="currentColor" opacity="0.4" marker-end="url(#ar4)"/>
+
+            <rect x="500" y="205" width="200" height="110" rx="9" fill="var(--surface)" stroke="currentColor" stroke-width="1.6"/>
+            <text x="600" y="248" text-anchor="middle" class="strong-lbl">Enhanced Agent</text>
+            <text x="600" y="268" text-anchor="middle" class="lbl">記憶 ＋ 集中工具 ＋</text>
+            <text x="600" y="284" text-anchor="middle" class="lbl">OAuth 驗證</text>
+
+            <text x="360" y="600" text-anchor="middle" class="lbl">每一步都是「疊加」—— Enhanced Agent 的核心邏輯與 Task 1.1 的 Basic Agent 完全一致</text>
+          </svg>
+        </div>
+        <figcaption>三條任務車道各自往下推進，最終在右側合流為同時具備記憶、集中工具與安全驗證的 Enhanced Agent。</figcaption>
+      </figure>
+    </section>
+
+    <section id="next">
+      <h2>總結與下一步</h2>
+      <p class="intro">Cell 33 的收尾：完成本筆記本的三個任務後，接下來要做的事。</p>
+      <div class="callout">
+        <strong>已完成：</strong> 用 Strands 建立基本客服智能體原型 → 用 AgentCore Memory 加上跨會話長期記憶 → 用 AgentCore Gateway 整合集中式、安全的企業工具。<br><br>
+        <strong>下一步：</strong> 關閉筆記本，回到 Lab 操作手冊，進入 Task 2，到 AgentCore 主控台檢視剛才建立的 Memory、Gateway 等雲端資源。
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="page-end">
+  <div class="footer-inner">
+    <div class="eyebrow">來源</div>
+    <p><code>notebook.ipynb</code>（與其簡體中文版 <code>notebook_zh_cn.ipynb</code>）· lab_helpers/lab1_strands_agent.py · scripts/agentcore_gateway.py, agentcore_memory.py, cognito_credentials_provider.py</p>
+  </div>
+</footer>
+
+<a href="#overview" class="backtop" id="backtop" aria-label="回到頂部">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+</a>
+
+<script>
+(function(){
+  // expand/collapse-all per section
+  document.querySelectorAll('.toggle-all').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var section = document.getElementById(btn.dataset.target);
+      var steps = section.querySelectorAll('details.step');
+      var anyClosed = Array.prototype.some.call(steps, function(d){ return !d.open; });
+      steps.forEach(function(d){ d.open = anyClosed; });
+      btn.textContent = anyClosed ? '全部收合' : '全部展開';
+    });
+  });
+
+  // scroll-spy
+  var links = Array.prototype.slice.call(document.querySelectorAll('a[data-toc]'));
+  var targets = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var id = '#' + entry.target.id;
+        var link = links.find(function(a){ return a.getAttribute('href') === id; });
+        if(!link) return;
+        if(entry.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+
+  // back to top visibility
+  var backtop = document.getElementById('backtop');
+  window.addEventListener('scroll', function(){
+    backtop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+})();
+</script>
